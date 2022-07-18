@@ -7,7 +7,7 @@ COMMANDS = ["add", "update", "remove"]
 
 def console():
     print("You load a script file to edit a dictionary of videos.\n"
-          "Want you like to add, update or remove video?")
+          "Want you like to add, update or remove video?\n")
     command = input()
     while command not in COMMANDS:
         command = input("Invalid command!\n")
@@ -30,6 +30,13 @@ def json_loader():
     return obj
 
 
+def json_rewriter(json_file):
+    with open(JSON_PATH, 'w') as f:
+        json.dump(json_file, f,
+                indent=4,
+                separators=(',', ': '))
+
+
 def add():
     json_file = json_loader()
     url = input("Input an url of your video:\n")
@@ -44,38 +51,35 @@ def add():
         "position": position
     }
 
-    with open(JSON_PATH, 'w') as f:
-        json.dump(json_file, f,
-                  indent=4,
-                  separators=(',', ': '))
+    json_rewriter(json_file)
     print('Successfully appended to the JSON file')
 
 
 def update():
     json_file = json_loader()
     filename = input("Input a filename that you want to remove (without extension):\n")
-    options = input("Input options that you want to change (url, filename, creator, position):\n").split(", ")
 
-    for option in options:
-        match option:
-            case "url":
-                new_url = input("Input new url:\n")
-                json_file[filename]["url"] = new_url
-            case "filename":
-                new_filename = input("Input new filename:\n")
-                json_file[new_filename] = json_file.pop(filename)
-                json_file[new_filename]["filename"] = new_filename
-            case "creator":
-                new_creator = input("Input new creator:\n")
-                json_file[filename]["creator"] = new_creator
-            case "position":
-                new_position = input("Input new position:\n")
-                json_file[filename]["position"] = new_position
+    while filename not in json_file:
+        filename = input("Invalid filename!")
+    else:
+        options = input("Input options that you want to change (url, filename, creator, position):\n").split(", ")
+        for option in options:
+            match option:
+                case "url":
+                    new_url = input("Input new url:\n")
+                    json_file[filename]["url"] = new_url
+                case "filename":
+                    new_filename = input("Input new filename:\n")
+                    json_file[new_filename] = json_file.pop(filename)
+                    json_file[new_filename]["filename"] = new_filename
+                case "creator":
+                    new_creator = input("Input new creator:\n")
+                    json_file[filename]["creator"] = new_creator
+                case "position":
+                    new_position = input("Input new position:\n")
+                    json_file[filename]["position"] = new_position
 
-    with open(JSON_PATH, 'w') as f:
-        json.dump(json_file, f,
-                  indent=4,
-                  separators=(',', ': '))
+    json_rewriter(json_file)
     print('Successfully updated the object of JSON file')
 
 
@@ -84,10 +88,7 @@ def remove():
     filename = input("Input a filename that you want to remove (without extension):\n")
     del json_file[filename]
 
-    with open(JSON_PATH, 'w') as f:
-        json.dump(json_file, f,
-                  indent=4,
-                  separators=(',', ': '))
+    json_rewriter(json_file)
     print('Successfully removed the object from the JSON file')
 
 
