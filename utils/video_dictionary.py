@@ -35,7 +35,7 @@ def add():
     url = input("Input an url of your video:\n")
     filename = input("Input a filename (without extension):\n")
     creator = input("Input a name of creator:\n")
-    position = input("Input a position (x, y):\n").split()
+    position = input("Input a position (e.g. '10, 10'):\n").split()
 
     json_file[filename] = {
         "url": url,
@@ -50,6 +50,23 @@ def add():
                   separators=(',', ': '))
 
     print('Successfully appended to the JSON file')
+
+
+def update():
+    return
+
+
+def remove():
+    json_file = json_loader()
+    filename = input("Input a filename that you want to remove (without extension):\n")
+    del json_file[filename]
+
+    with open(JSON_PATH, 'w') as f:
+        json.dump(json_file, f,
+                  indent=4,
+                  separators=(',', ': '))
+
+    print('Successfully removed the object from the JSON file')
 
 
 console()
