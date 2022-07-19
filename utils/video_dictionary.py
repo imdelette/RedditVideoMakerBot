@@ -2,10 +2,10 @@ import json
 import requests
 from os import path
 
-
 # TODO: use 'rich' library
-# TODO: parser for a name of creator
 # TODO: output list of existence elements in the JSON file
+# TODO: remake a position setting
+
 
 JSON_PATH = 'json/background_options.json'
 YT_LINK = "https://youtu.be/"
@@ -17,7 +17,7 @@ def console():
           "FILENAME: name of the video,\n"
           "CREATOR: owner of the video,\n"
           "POSITION: position of image clips in the background.\n-")
-    command = input("Want you like to add, update or remove a video?\n")
+    command = input("Want you like to add, update or remove a video? (write \'no\', if you don't want)\n")
 
     while not is_valid_command(command):
         command = input("Invalid input! Try again.\n")
@@ -29,6 +29,8 @@ def console():
                 update()
             case "remove":
                 remove()
+            case "no":
+                return
 
 
 def json_loader():
@@ -46,6 +48,26 @@ def json_rewriter(json_file):
                 separators=(',', ': '))
 
 
+def json_parser():
+    json_file = json_loader()
+    background_options = {}
+    for obj in json_file:
+        if json_file[obj]["position"][1].isnumeric():
+            x = json_file[obj]["position"][0]
+            y = int(json_file[obj]["position"][1])
+            pos = lambda t: (x, y + t)
+        else:
+            pos = (json_file[obj]["position"][0], json_file[obj]["position"][1])
+
+        background_options[obj] = (
+            json_file[obj]["uri"],
+            json_file[obj]["filename"],
+            json_file[obj]["owner"],
+            pos,
+        )
+    return background_options
+
+
 def add():
     json_file = json_loader()
 
@@ -57,21 +79,20 @@ def add():
         owner = get_video_owner(uri)
 
     filename = input("Input a name (without extension):\n")
-    while not is_valid_filename(filename):
-        name = input(f"\'{filename}\' is invalid! Try again.\n")
+    while is_existing_filename(filename):
+        filename = input(f"\'{filename}\' already exists! Try again.\n")
 
-    position = input("Input a position (split by space, e. g. '10 10'):\n").split()
-    while not is_valid_position(position):
-        position = input(f"\'{position}\' is invalid! Try again.\n").split()
-
+    x_position = input("Input an X position (or \'center\', \'top\', \'bottom\'):\n")
+    while not is_valid_position(x_position):
+        x_position = input(f"\'{x_position}\' is invalid! Try again.\n")
     json_file[filename] = {
         "uri": uri,
         "filename": filename + ".mp4",
         "owner": owner,
-        "position": position
+        "position": ["center", x_position]
     }
-
     json_rewriter(json_file)
+
     print(f'Successfully added the \'{filename}\' to the JSON file.')
 
 
@@ -80,9 +101,9 @@ def update():
     filename = input("Input a filename that you want to update (without extension):\n")
 
     while not is_existing_filename(filename):
-        filename = input("Invalid input! Try again.\n")
+        filename = input(f"\'{filename}\' doesn't exist! Try again.\n")
     else:
-        options = input("Input options that you want to change (uri, filename, creator or position):\n").split()
+        options = input("Input an option/options that you want to change (uri, filename, creator or position):\n").split()
         while not is_valid_options(options):
             options = input("Invalid input! Try again.\n").split()
         else:
@@ -94,15 +115,14 @@ def update():
                         json_file[filename]["owner"] = get_video_owner(YT_LINK + new_video_code)
                     case "filename":
                         new_filename = input("Input new name:\n")
-                        while not is_valid_filename(new_filename):
-                            new_filename = input("Input new filename:\n")
+                        while is_existing_filename(new_filename):
+                            new_filename = input(f"\'{filename}\' already exists! Try again:\n")
                         else:
                             json_file[new_filename] = json_file.pop(filename)
                             json_file[new_filename]["filename"] = new_filename
                     case "position":
-                        new_position = input("Input new position:\n")
-                        json_file[filename]["position"] = new_position
-
+                        new_x_position = input("Input new position:\n")
+                        json_file[filename]["position"][1] = new_x_position
     json_rewriter(json_file)
     print(f'Successfully updated the \'{filename}\' in the JSON file.')
 
@@ -111,31 +131,8 @@ def remove():
     json_file = json_loader()
     filename = input("Input a filename that you want to remove (without extension):\n")
     del json_file[filename]
-
     json_rewriter(json_file)
     print(f'Successfully removed the \'{filename}\'.')
-
-
-def is_valid_command(command):
-    return command in ["add", "update", "remove"]
-
-
-# this doesn't work the way I would like
-def is_valid_uri(video_code):
-    response = requests.get(YT_LINK + video_code)
-    if response.status_code == 200:
-        return True
-    else:
-        print(f"\'{video_code}\' is invalid!")
-        return False
-
-
-def is_existing_filename(filename):
-    return filename in json_loader()
-
-
-def is_valid_filename(filename):
-    return True
 
 
 def get_video_owner(uri):
@@ -144,15 +141,42 @@ def get_video_owner(uri):
     return obj["author_name"]
 
 
+def is_valid_command(command):
+    return command in ["add", "update", "remove", "no"]
+
+
+def is_valid_uri(video_code):
+    response = requests.get(YT_LINK + video_code)
+    if response.status_code == 200 and is_valid_owner(YT_LINK + video_code):
+        return True
+
+    return False
+
+
+def is_existing_filename(filename):
+    return filename in json_loader()
+
+
+def is_valid_owner(uri):
+    try:
+        get_video_owner(uri)
+        return True
+    except KeyError:
+        print("Invalid author of video!")
+        return False
+
+
+def is_valid_position(position):
+    if position.isnumeric() or position in ["center", "top", "bottom"]:
+        return True
+    return False
+
+
 def is_valid_options(options):
     for option in options:
         if option not in ["uri", "filename", "owner", "position"]:
             print(f"\'{option}\' is invalid option!")
             return False
-    return True
-
-
-def is_valid_position(position):
     return True
 
 

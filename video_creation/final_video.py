@@ -21,14 +21,6 @@ from utils import settings
 
 console = Console()
 
-dimensions = {
-    [1080, 1920],
-    [1920, 1080],
-    [1440, 1920],
-    [1920, 1440],
-
-}
-
 W, H = 1080, 1920
 
 
