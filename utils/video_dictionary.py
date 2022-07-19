@@ -1,16 +1,24 @@
 import json
+import requests
 from os import path
 
+
+# TODO: use 'rich' library
+# TODO: parser for a name of creator
+# TODO: output list of existence elements in the JSON file
+
 JSON_PATH = 'assets/json/background_options.json'
+YT_LINK = "https://youtu.be/"
 
 
 def console():
-    print("You load a script file to edit a dictionary of videos.\n"
+    print("You run a script that edit a dictionary of videos.\n"
           "-\nURL: link of the youtube video,\n"
           "FILENAME: name of the video,\n"
           "CREATOR: owner of the video,\n"
-          "POSITION: position of image clips in the background\n-")
-    command = input("Want you like to add, update or remove video?\n")
+          "POSITION: position of image clips in the background.\n-")
+    command = input("Want you like to add, update or remove a video?\n")
+
     while not is_valid_command(command):
         command = input("Invalid input! Try again.\n")
     else:
@@ -24,7 +32,6 @@ def console():
 
 
 def json_loader():
-    obj = {}
     if path.isfile(JSON_PATH) is False:
         raise Exception("File not found")
     with open(JSON_PATH) as fp:
@@ -41,20 +48,31 @@ def json_rewriter(json_file):
 
 def add():
     json_file = json_loader()
-    uri = input("Input an URI of your video:\n")
-    filename = input("Input a filename (without extension):\n")
-    creator = input("Input a name of creator:\n")
-    position = input("Input a position (e.g. '10, 10'):\n").split()
+
+    video_code = input("Input a code of your video (\'https://youtu.be/<video_code>\'):\n")
+    while not is_valid_uri(video_code):
+        video_code = input(f"\'{video_code}\' is invalid! Try again.\n")
+    else:
+        uri = YT_LINK + video_code
+        owner = get_video_owner(uri)
+
+    filename = input("Input a name (without extension):\n")
+    while not is_valid_filename(filename):
+        name = input(f"\'{filename}\' is invalid! Try again.\n")
+
+    position = input("Input a position (split by space, e. g. '10 10'):\n").split()
+    while not is_valid_position(position):
+        position = input(f"\'{position}\' is invalid! Try again.\n").split()
 
     json_file[filename] = {
         "uri": uri,
         "filename": filename + ".mp4",
-        "creator": creator,
+        "owner": owner,
         "position": position
     }
 
     json_rewriter(json_file)
-    print(f'Successfully added the \'{filename}\'')
+    print(f'Successfully added the \'{filename}\' to the JSON file.')
 
 
 def update():
@@ -71,21 +89,22 @@ def update():
             for option in options:
                 match option:
                     case "uri":
-                        new_uri = input("Input new uri:\n")
-                        json_file[filename]["uri"] = new_uri
+                        new_video_code = input("Input new code of your video (\'https://youtu.be/<video_code>\'):\n")
+                        json_file[filename]["uri"] = YT_LINK + new_video_code
+                        json_file[filename]["owner"] = get_video_owner(YT_LINK + new_video_code)
                     case "filename":
-                        new_filename = input("Input new filename:\n")
-                        json_file[new_filename] = json_file.pop(filename)
-                        json_file[new_filename]["filename"] = new_filename
-                    case "creator":
-                        new_creator = input("Input new creator:\n")
-                        json_file[filename]["creator"] = new_creator
+                        new_filename = input("Input new name:\n")
+                        while not is_valid_filename(new_filename):
+                            new_filename = input("Input new filename:\n")
+                        else:
+                            json_file[new_filename] = json_file.pop(filename)
+                            json_file[new_filename]["filename"] = new_filename
                     case "position":
                         new_position = input("Input new position:\n")
                         json_file[filename]["position"] = new_position
 
     json_rewriter(json_file)
-    print(f'Successfully updated the \'{filename}\'.')
+    print(f'Successfully updated the \'{filename}\' in the JSON file.')
 
 
 def remove():
@@ -101,24 +120,40 @@ def is_valid_command(command):
     return command in ["add", "update", "remove"]
 
 
-def is_valid_uri(uri):
-    return True
+# this doesn't work the way I would like
+def is_valid_uri(video_code):
+    response = requests.get(YT_LINK + video_code)
+    if response.status_code == 200:
+        return True
+    else:
+        print(f"\'{video_code}\' is invalid!")
+        return False
 
 
 def is_existing_filename(filename):
     return filename in json_loader()
 
+
 def is_valid_filename(filename):
     return True
 
+
+def get_video_owner(uri):
+    response = requests.get("https://noembed.com/embed?url=" + uri)
+    obj = response.json()
+    return obj["author_name"]
+
+
 def is_valid_options(options):
     for option in options:
-        if option not in ["uri", "filename", "creator", "position"]:
+        if option not in ["uri", "filename", "owner", "position"]:
             print(f"\'{option}\' is invalid option!")
             return False
     return True
 
+
 def is_valid_position(position):
     return True
+
 
 console()
