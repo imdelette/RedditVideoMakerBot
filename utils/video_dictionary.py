@@ -7,7 +7,7 @@ from os import path
 # TODO: parser for a name of creator
 # TODO: output list of existence elements in the JSON file
 
-JSON_PATH = 'assets/json/background_options.json'
+JSON_PATH = 'json/background_options.json'
 YT_LINK = "https://youtu.be/"
 
 
