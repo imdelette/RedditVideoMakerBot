@@ -12,12 +12,12 @@ YT_LINK = "https://youtu.be/"
 
 
 def console():
-    print("You run a script that edit a dictionary of videos.\n"
-          "-\nURL: link of the youtube video,\n"
-          "FILENAME: name of the video,\n"
-          "CREATOR: owner of the video,\n"
-          "POSITION: position of image clips in the background.\n-")
-    command = input("Want you like to add, update or remove a video? (write \'no\', if you don't want)\n")
+    print("You run a script that edit a dictionary of videos.\n")
+          # "-\nURL: link of the youtube video,\n"
+          # "FILENAME: name of the video,\n"
+          # "CREATOR: owner of the video,\n"
+          # "POSITION: position of image clips in the background.\n-")
+    command = input("Want you like to add, update or remove a video? (write \'no\', if you don't)\n")
 
     while not is_valid_command(command):
         command = input("Invalid input! Try again.\n")
@@ -82,14 +82,14 @@ def add():
     while is_existing_filename(filename):
         filename = input(f"\'{filename}\' already exists! Try again.\n")
 
-    x_position = input("Input an X position (or \'center\', \'top\', \'bottom\'):\n")
-    while not is_valid_position(x_position):
-        x_position = input(f"\'{x_position}\' is invalid! Try again.\n")
+    y_position = input("Input an Y position (or \'center\', \'top\', \'bottom\'):\n")
+    while not is_valid_position(y_position):
+        y_position = input(f"\'{y_position}\' is invalid! Try again.\n")
     json_file[filename] = {
         "uri": uri,
         "filename": filename + ".mp4",
         "owner": owner,
-        "position": ["center", x_position]
+        "position": ["center", y_position]
     }
     json_rewriter(json_file)
 
@@ -121,8 +121,8 @@ def update():
                             json_file[new_filename] = json_file.pop(filename)
                             json_file[new_filename]["filename"] = new_filename
                     case "position":
-                        new_x_position = input("Input new position:\n")
-                        json_file[filename]["position"][1] = new_x_position
+                        new_y_position = input("Input new Y position:\n")
+                        json_file[filename]["position"][1] = new_y_position
     json_rewriter(json_file)
     print(f'Successfully updated the \'{filename}\' in the JSON file.')
 
